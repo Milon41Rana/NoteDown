@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Download, FileText, Settings } from "lucide-react";
+import { Download, FileText, Settings, Loader2 } from "lucide-react";
 
 import { useNoteContext } from "@/app/context/note-context";
 import { Button } from "@/components/ui/button";
@@ -25,57 +25,80 @@ export function AppHeader() {
   const [pageSize, setPageSize] = React.useState<"a4" | "letter">("a4");
   const [orientation, setOrientation] =
     React.useState<"portrait" | "landscape">("portrait");
+  const [isExporting, setIsExporting] = React.useState(false);
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
-  const handleExport = async () => {
-    if (!activeNote) {
+  const isNoteEmpty = !activeNote || (!activeNote.title.trim() && !activeNote.content.trim());
+
+  const handleOpenChange = (open: boolean) => {
+    if (open && isNoteEmpty) {
       toast({
         variant: "destructive",
-        title: "No note selected",
-        description: "Please select a note to export.",
+        title: "Note is empty",
+        description: "Please add content to your note before exporting.",
       });
       return;
     }
+    setIsDialogOpen(open);
+  }
 
+  const handleExport = async () => {
+    if (isExporting || !activeNote) {
+      return;
+    }
+    setIsExporting(true);
     toast({
       title: "Exporting PDF",
       description: "Your PDF is being generated...",
     });
 
-    const { default: jsPDF } = await import("jspdf");
+    try {
+      const { default: jsPDF } = await import("jspdf");
 
-    const doc = new jsPDF({
-      orientation,
-      unit: "mm",
-      format: pageSize,
-    });
+      const doc = new jsPDF({
+        orientation,
+        unit: "mm",
+        format: pageSize,
+      });
 
-    const margin = 15;
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const textWidth = doc.internal.pageSize.getWidth() - margin * 2;
-    let y = 20;
-    const lineHeight = 7; // Approx line height for 12pt font in mm
+      const margin = 15;
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const textWidth = doc.internal.pageSize.getWidth() - margin * 2;
+      let y = 20;
+      const lineHeight = 7; // Approx line height for 12pt font in mm
 
-    // Add title
-    doc.setFontSize(16);
-    const titleLines = doc.splitTextToSize(activeNote.title, textWidth);
-    doc.text(titleLines, margin, y);
-    y += titleLines.length * lineHeight;
-    y += 5; // space
+      // Add title
+      doc.setFontSize(16);
+      const titleLines = doc.splitTextToSize(activeNote.title, textWidth);
+      doc.text(titleLines, margin, y);
+      y += titleLines.length * lineHeight;
+      y += 5; // space
 
-    // Add content
-    doc.setFontSize(12);
-    const contentLines = doc.splitTextToSize(activeNote.content, textWidth);
+      // Add content
+      doc.setFontSize(12);
+      const contentLines = doc.splitTextToSize(activeNote.content, textWidth);
 
-    for (const line of contentLines) {
-      if (y > pageHeight - margin) {
-        doc.addPage();
-        y = margin;
+      for (const line of contentLines) {
+        if (y > pageHeight - margin) {
+          doc.addPage();
+          y = margin;
+        }
+        doc.text(line, margin, y);
+        y += lineHeight;
       }
-      doc.text(line, margin, y);
-      y += lineHeight;
-    }
 
-    doc.save(`${activeNote.title.replace(/\s/g, "_") || "note"}.pdf`);
+      doc.save(`${activeNote.title.replace(/\s/g, "_") || "note"}.pdf`);
+    } catch (error) {
+      console.error("PDF Export Error: ", error);
+      toast({
+        variant: "destructive",
+        title: "Export Failed",
+        description: "There was a problem generating your PDF."
+      });
+    } finally {
+      setIsExporting(false);
+      setIsDialogOpen(false);
+    }
   };
 
   return (
@@ -85,7 +108,7 @@ export function AppHeader() {
         <FileText className="h-6 w-6 text-primary" />
         <h1 className="text-lg font-semibold tracking-tight">NoteDown</h1>
       </div>
-      <Dialog>
+      <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
           <Button
             size="sm"
@@ -151,9 +174,17 @@ export function AppHeader() {
           <DialogFooter>
             <Button
               onClick={handleExport}
+              disabled={isExporting}
               className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
             >
-              Export
+              {isExporting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                "Export"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
