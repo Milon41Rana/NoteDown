@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { Download, FileText, Settings } from "lucide-react";
-import jsPDF from "jspdf";
 
 import { useNoteContext } from "@/app/context/note-context";
 import { Button } from "@/components/ui/button";
@@ -27,7 +26,7 @@ export function AppHeader() {
   const [orientation, setOrientation] =
     React.useState<"portrait" | "landscape">("portrait");
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!activeNote) {
       toast({
         variant: "destructive",
@@ -41,6 +40,8 @@ export function AppHeader() {
       title: "Exporting PDF",
       description: "Your PDF is being generated...",
     });
+
+    const { default: jsPDF } = await import("jspdf");
 
     const doc = new jsPDF({
       orientation,
