@@ -14,7 +14,7 @@ export function NoteList() {
   const filteredNotes = activeFolderId
     ? notes
         .filter((note) => note.folderId === activeFolderId)
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     : [];
 
   const handleAddNote = () => {
@@ -61,7 +61,7 @@ export function NoteList() {
                 <h3 className="font-semibold truncate">{note.title || "Untitled Note"}</h3>
                 <p className="text-sm text-muted-foreground truncate">{note.content || "No content"}</p>
                 <p className="text-xs text-muted-foreground mt-2">
-                  {formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })}
+                  {formatDistanceToNow(new Date(note.updatedAt), { addSuffix: true })}
                 </p>
               </button>
             ))}

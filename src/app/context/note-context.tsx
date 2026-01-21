@@ -27,7 +27,7 @@ type NoteAction =
   | { type: "ADD_NOTE"; payload: { folderId: string } }
   | {
       type: "UPDATE_NOTE";
-      payload: { noteId: string; data: Partial<Omit<Note, "id">> };
+      payload: { noteId: string; data: Partial<Omit<Note, "id" | "updatedAt">> };
     }
   | { type: "DELETE_NOTE"; payload: string };
 
@@ -37,7 +37,7 @@ const noteReducer = (state: NoteState, action: NoteAction): NoteState => {
     case "SELECT_FOLDER": {
       const notesInFolder = state.notes
         .filter((note) => note.folderId === action.payload)
-        .sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        .sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
       return {
         ...state,
         activeFolderId: action.payload,
@@ -59,6 +59,7 @@ const noteReducer = (state: NoteState, action: NoteAction): NoteState => {
         title: "Untitled Note",
         content: "",
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
       return {
         ...state,
@@ -70,7 +71,7 @@ const noteReducer = (state: NoteState, action: NoteAction): NoteState => {
         ...state,
         notes: state.notes.map((note) =>
           note.id === action.payload.noteId
-            ? { ...note, ...action.payload.data }
+            ? { ...note, ...action.payload.data, updatedAt: new Date().toISOString() }
             : note
         ),
       };
@@ -82,7 +83,7 @@ const noteReducer = (state: NoteState, action: NoteAction): NoteState => {
       if (state.activeNoteId === action.payload) {
         const notesInSameFolder = notesAfterDelete
           .filter((note) => note.folderId === state.activeFolderId)
-          .sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          .sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
         newActiveNoteId = notesInSameFolder.length > 0 ? notesInSameFolder[0].id : null;
       }
       return {
@@ -105,7 +106,7 @@ interface NoteContextType {
   selectNote: (noteId: string | null) => void;
   addFolder: (name: string) => void;
   addNote: (folderId: string) => void;
-  updateNote: (noteId: string, data: Partial<Omit<Note, "id">>) => void;
+  updateNote: (noteId: string, data: Partial<Omit<Note, "id" | "updatedAt">>) => void;
   deleteNote: (noteId: string) => void;
 }
 
@@ -147,7 +148,7 @@ export const NoteProvider = ({ children }: { children: ReactNode }) => {
     dispatch({ type: "ADD_NOTE", payload: { folderId } });
   };
 
-  const updateNote = (noteId: string, data: Partial<Omit<Note, "id">>) => {
+  const updateNote = (noteId: string, data: Partial<Omit<Note, "id" | "updatedAt">>) => {
     dispatch({ type: "UPDATE_NOTE", payload: { noteId, data } });
   };
 
