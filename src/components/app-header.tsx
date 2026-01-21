@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import { Download, FileText, Settings } from "lucide-react";
+import jsPDF from "jspdf";
 
+import { useNoteContext } from "@/app/context/note-context";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,21 +16,65 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "@/components/ui/radio-group";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useToast } from "@/hooks/use-toast";
 
 export function AppHeader() {
   const { toast } = useToast();
+  const { activeNote } = useNoteContext();
+  const [pageSize, setPageSize] = React.useState<"a4" | "letter">("a4");
+  const [orientation, setOrientation] =
+    React.useState<"portrait" | "landscape">("portrait");
 
   const handleExport = () => {
+    if (!activeNote) {
+      toast({
+        variant: "destructive",
+        title: "No note selected",
+        description: "Please select a note to export.",
+      });
+      return;
+    }
+
     toast({
       title: "Exporting PDF",
-      description: "PDF generation is a work in progress!",
+      description: "Your PDF is being generated...",
     });
+
+    const doc = new jsPDF({
+      orientation,
+      unit: "mm",
+      format: pageSize,
+    });
+
+    const margin = 15;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const textWidth = doc.internal.pageSize.getWidth() - margin * 2;
+    let y = 20;
+    const lineHeight = 7; // Approx line height for 12pt font in mm
+
+    // Add title
+    doc.setFontSize(16);
+    const titleLines = doc.splitTextToSize(activeNote.title, textWidth);
+    doc.text(titleLines, margin, y);
+    y += titleLines.length * lineHeight;
+    y += 5; // space
+
+    // Add content
+    doc.setFontSize(12);
+    const contentLines = doc.splitTextToSize(activeNote.content, textWidth);
+
+    for (const line of contentLines) {
+      if (y > pageHeight - margin) {
+        doc.addPage();
+        y = margin;
+      }
+      doc.text(line, margin, y);
+      y += lineHeight;
+    }
+
+    doc.save(`${activeNote.title.replace(/\s/g, "_") || "note"}.pdf`);
   };
 
   return (
@@ -40,7 +86,11 @@ export function AppHeader() {
       </div>
       <Dialog>
         <DialogTrigger asChild>
-          <Button size="sm" className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
+          <Button
+            size="sm"
+            className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+            disabled={!activeNote}
+          >
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">Download PDF</span>
           </Button>
@@ -48,7 +98,7 @@ export function AppHeader() {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5"/>
+              <Settings className="h-5 w-5" />
               Export to PDF
             </DialogTitle>
             <DialogDescription>
@@ -60,7 +110,11 @@ export function AppHeader() {
               <Label htmlFor="page-size" className="text-right">
                 Page Size
               </Label>
-              <RadioGroup defaultValue="a4" className="col-span-3 flex gap-4">
+              <RadioGroup
+                value={pageSize}
+                onValueChange={(value: "a4" | "letter") => setPageSize(value)}
+                className="col-span-3 flex gap-4"
+              >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="a4" id="a4" />
                   <Label htmlFor="a4">A4</Label>
@@ -76,7 +130,10 @@ export function AppHeader() {
                 Orientation
               </Label>
               <RadioGroup
-                defaultValue="portrait"
+                value={orientation}
+                onValueChange={(value: "portrait" | "landscape") =>
+                  setOrientation(value)
+                }
                 className="col-span-3 flex gap-4"
               >
                 <div className="flex items-center space-x-2">
