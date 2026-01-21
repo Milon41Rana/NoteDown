@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   },
   icons: [
     { rel: 'shortcut icon', url: '/favicon.ico' },
-    { rel: 'apple-touch-icon', url: '/icons/icon-192x192.png' },
+    { rel: 'apple-touch-icon', url: '/icons/icon-192x192.svg' },
   ],
 };
 
@@ -37,7 +37,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        <meta name="msapplication-config" content="/icons/browserconfig.xml" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
         <meta name="msapplication-TileColor" content="#e5f0ff" />
         <meta name="msapplication-tap-highlight" content="no" />
       </head>
