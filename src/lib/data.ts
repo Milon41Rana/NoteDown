@@ -1,12 +1,40 @@
 import type { Folder, Note } from './types';
 
-export const initialFolders: Folder[] = [
+// Function to get data from localStorage
+const getFromLocalStorage = <T>(key: string, defaultValue: T): T => {
+  if (typeof window === 'undefined') {
+    return defaultValue;
+  }
+  const storedValue = localStorage.getItem(key);
+  if (storedValue) {
+    try {
+      return JSON.parse(storedValue);
+    } catch (error) {
+      console.error(`Error parsing localStorage key "${key}":`, error);
+      return defaultValue;
+    }
+  } else {
+    // If no value is found, set the default value in localStorage
+    localStorage.setItem(key, JSON.stringify(defaultValue));
+    return defaultValue;
+  }
+};
+
+
+// Function to set data in localStorage
+export const setInLocalStorage = <T>(key: string, value: T) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+};
+
+const defaultFolders: Folder[] = [
   { id: '1', name: 'Meeting Notes' },
   { id: '2', name: 'Project Ideas' },
   { id: '3', name: 'Personal Reminders' },
 ];
 
-export const initialNotes: Note[] = [
+const defaultNotes: Note[] = [
   {
     id: '101',
     folderId: '1',
@@ -40,3 +68,6 @@ export const initialNotes: Note[] = [
     updatedAt: new Date().toISOString(),
   },
 ];
+
+export const initialFolders: Folder[] = getFromLocalStorage('folders', defaultFolders);
+export const initialNotes: Note[] = getFromLocalStorage('notes', defaultNotes);

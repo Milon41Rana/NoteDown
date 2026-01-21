@@ -1,6 +1,6 @@
-"use client";
+'''"use client";
 
-import { initialFolders, initialNotes } from "@/lib/data";
+import { initialFolders, initialNotes, setInLocalStorage } from "@/lib/data";
 import type { Folder, Note } from "@/lib/types";
 import {
   createContext,
@@ -128,6 +128,12 @@ export const NoteProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [state.folders, state.activeFolderId]);
 
+  useEffect(() => {
+    // Persist state to localStorage whenever it changes
+    setInLocalStorage('folders', state.folders);
+    setInLocalStorage('notes', state.notes);
+  }, [state.folders, state.notes]);
+
   const activeNote = state.notes.find(
     (note) => note.id === state.activeNoteId
   );
@@ -185,3 +191,4 @@ export const useNoteContext = () => {
   }
   return { ...context, ...context.state };
 };
+'''
